@@ -1,0 +1,21 @@
+[target.riscv32imac-unknown-none-elf]
+# Flash over USB with picotool: write only the flash sectors that changed (-u),
+# verify them (-v), run the new image (-x), and first reboot a board running
+# this firmware into BOOTSEL (-f), so the button is only needed the first time.
+runner = "picotool load -u -v -x -f -t elf"
+
+[alias]
+# Flash over a debug probe instead, and stream logs back over RTT.
+run-probe = ["run", "--config", "target.riscv32imac-unknown-none-elf.runner='probe-rs run --chip=RP235x_riscv --preverify --always-print-stacktrace'"]
+
+[build]
+rustflags = [
+  # Hazard3 implements these bit-manipulation extensions on top of RV32IMAC,
+  # so let LLVM use them for our code. `core` stays plain RV32IMAC.
+  "-C", "target-feature=+zba,+zbb,+zbs,+zbkb",
+  # Required to obtain backtraces through probe-rs.
+  # NOTE: May negatively impact performance of produced code
+  "-C", "force-frame-pointers",
+]
+
+target = "riscv32imac-unknown-none-elf"
